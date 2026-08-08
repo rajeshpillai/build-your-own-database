@@ -1,0 +1,21 @@
+{
+  "name": "finch",
+  "version": "1.0.0",
+  "description": "A database engine — pages, a B-tree, a write-ahead log and a small SQL.",
+  "type": "module",
+  "main": "src/db.ts",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node main.ts",
+    "test": "node tests/run.ts",
+    "verify": "./verify.sh",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "typescript": "^5.9.0"
+  },
+  "license": "MIT"
+}

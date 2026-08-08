@@ -1,0 +1,28 @@
+{
+  "// why": [
+    "TypeScript is used for types and nothing else. Node 22.18+ strips them and",
+    "runs the file, so this project has no build step and needs no install to",
+    "run — `node main.ts` is the whole story.",
+    "",
+    "erasableSyntaxOnly is what keeps that true. Parameter properties, enums and",
+    "namespaces are all valid TypeScript that Node refuses to run, and neither",
+    "`node --check` nor a plain `tsc --noEmit` rejects them: the first ignores",
+    "types entirely, the second correctly says the code is legal. Without this",
+    "flag the first parameter property somebody writes breaks clone-and-run, and",
+    "it breaks it for the viewer rather than for us."
+  ],
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["main.ts", "src/**/*.ts", "tools/**/*.ts", "tests/**/*.ts"]
+}

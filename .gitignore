@@ -1,0 +1,16 @@
+node_modules/
+*.tsbuildinfo
+
+# Database files this project writes while you are running it. It writes them
+# beside itself rather than into /tmp, so everything the program touches is in
+# one place.
+#
+# The log lives at <database>-wal, so a pattern matching only *.wal misses it.
+# That is not hypothetical: it swept a dozen scratch logs into a commit once.
+*.db
+*.db-wal
+*.db-log
+*.finch
+*.wal
+finch-*.json
+bench-*.db
