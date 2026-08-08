@@ -1,0 +1,20 @@
+{
+  "name": "finch",
+  "version": "0.1.0",
+  "description": "A database built from an empty file up, one step at a time.",
+  "type": "module",
+  "main": "src/jsonstore.ts",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node main.ts",
+    "verify": "./verify.sh",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "typescript": "^5.9.0"
+  },
+  "license": "MIT"
+}
