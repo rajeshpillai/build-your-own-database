@@ -17,7 +17,7 @@ DB="${DB:-./finch-verify-$$.json}"
 export DB
 FAILED=0
 
-cleanup() { rm -f "$DB"; }
+cleanup() { rm -f "$DB" "$DB.pages"; }
 trap cleanup EXIT
 
 # check <label> <expected> <actual>
@@ -39,49 +39,33 @@ check() {
 
 field() { sed -n "s/^$1 *//p" <<<"$2" | head -1; }
 
-echo "step 1 — a JSON file, and what it costs"
+echo "step 2 — a file of fixed-size pages"
 echo
 
-OUT=$(node main.ts 2>&1) || { echo "$OUT"; exit 1; }
+OUT=$(node main.ts 2>&1)         || { echo "$OUT"; exit 1; }
+CURVE=$(node tools/curve.ts 2>&1) || { echo "$CURVE"; exit 1; }
 
-check "rows stored"            "500"       "$(field 'rows stored' "$OUT")"
-check "bytes on disk"          "29,677"    "$(field 'bytes on disk' "$OUT")"
-check "bytes written"          "7,368,161" "$(field 'bytes written' "$OUT")"
-check "write amplification"    "248.3x"    "$(field amplification "$OUT")"
-check "rows examined"          "500 of 500" "$(field 'rows examined' "$OUT")"
+check "json bytes written"     "7,368,161" "$(field 'json bytes written' "$OUT")"
+check "page bytes written"     "2,048,000" "$(field 'page bytes written' "$OUT")"
+check "pages on disk"          "500"       "$(field 'pages on disk' "$OUT")"
 
-# The crash. It exits non-zero on purpose, so the run is not the check — what is
-# left on the disk afterwards is.
-#
-# "rows recoverable" has to be MEASURED, by actually trying to read the file back.
-# The first version of this line compared the string "0 of 500" against itself,
-# which passes whatever the crash leaves behind and proves nothing at all.
+# One page in, one page out. Step 1 read the whole file for this.
 echo
-node main.ts crash >/dev/null 2>&1
-LEFT=$(wc -c <"$DB" | tr -d ' ')
+check "row 400 found"          "user-400"  "$(field 'row 400 found' "$OUT")"
+check "bytes read for it"      "4,096"     "$(field 'bytes read for it' "$OUT")"
 
-RECOVERED=$(node -e '
-  const fs = require("node:fs");
-  try {
-    const rows = JSON.parse(fs.readFileSync(process.env.DB, "utf8"));
-    console.log(`${Array.isArray(rows) ? rows.length : 0} of 500`);
-  } catch {
-    console.log("0 of 500");
-  }
-')
-VALID=$(node -e '
-  const fs = require("node:fs");
-  try {
-    JSON.parse(fs.readFileSync(process.env.DB, "utf8"));
-    console.log("yes");
-  } catch {
-    console.log("no");
-  }
-')
+# And what it cost. A 4 KiB page holding 61 bytes is a bad use of a page, and
+# saying so here is the reason section 2 exists.
+echo
+check "bytes used per page"    "61"        "$(field 'bytes used per page' "$OUT")"
+check "occupancy"              "1.5%"      "$(field occupancy "$OUT")"
 
-check "bytes left by the crash" "14838"     "$LEFT"
-check "is it valid JSON"        "no"        "$VALID"
-check "rows recoverable"        "0 of 500"  "$RECOVERED"
+# The shape, not the ratio. At 100 rows the pages are WORSE, because most of
+# every page is empty. One grows with the square of the rows and one does not.
+echo
+check "at 100 rows"            "0.7x"      "$(awk '$1==100 {print $NF}' <<<"$CURVE")"
+check "at 200 rows"            "1.4x"      "$(awk '$1==200 {print $NF}' <<<"$CURVE")"
+check "at 500 rows"            "3.6x"      "$(awk '$1==500 {print $NF}' <<<"$CURVE")"
 
 echo
 [ "$FAILED" -eq 0 ] && echo "all checks passed" || echo "SOME CHECKS FAILED"
